@@ -1,12 +1,28 @@
-import { Box, Flex, Heading, Button, Icon, Table, Thead, Tr, Th, Checkbox, Tbody, Td, Text, useBreakpointValue, useColorModeValue } from "@chakra-ui/react"
+import { Box, Flex, Heading, Button, Icon, Table, Thead, Tr, Th, Checkbox, Tbody, Td, Text, useBreakpointValue, useColorModeValue, Spinner } from "@chakra-ui/react"
 import { RiAddLine } from "react-icons/ri"
 import Link from 'next/link'
+import { useQuery } from 'react-query'
 
 import Header from "../../components/Header"
 import Pagination from "../../components/Pagination"
 import Sidebar from "../../components/Sidebar"
 
 export default function UserList() {
+
+  const { data, isLoading, error } = useQuery('users', async () => {
+    const response = await fetch('http://localhost:3000/api/users')
+    const data = await response.json()
+    return data.users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: new Date(user.created_at).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
+    }))
+  }, { staleTime: 5000 })
 
   const isWideVersion = useBreakpointValue({
     base: false,
@@ -31,52 +47,44 @@ export default function UserList() {
             </Link>
           </Flex>
 
-          <Table>
-            <Thead>
-              <Tr>
-                <Th px={['4', '4', '6']} color={useColorModeValue('gray.100', 'gray.900')} width="8"><Checkbox colorScheme="pink" /></Th>
-                <Th>Usuário</Th>
-                {isWideVersion && <Th>Data de cadastro</Th>}
-              </Tr>
-            </Thead>
+          {isLoading ? (
+            <Flex justify="center">
+              <Spinner />
+            </Flex>
+          ) : error ? (
+            <Flex justify="center">
+              <Text>Falha ao obter dados dos usuários.</Text>
+            </Flex>
+          ) : (
+            <>
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th px={['4', '4', '6']} color={useColorModeValue('gray.100', 'gray.900')} width="8"><Checkbox colorScheme="pink" /></Th>
+                    <Th>Usuário</Th>
+                    {isWideVersion && <Th>Data de cadastro</Th>}
+                  </Tr>
+                </Thead>
 
-            <Tbody>
-              <Tr>
-                <Td px={['4', '4', '6']}><Checkbox colorScheme="pink" /></Td>
-                <Td>
-                  <Box>
-                    <Text fontWeight="bold">Douglas Flores</Text>
-                    <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.300')}>contato@douglasdgmarques.dev</Text>
-                  </Box>
-                </Td>
-                {isWideVersion && <Td>15 de Novembro, 2021</Td>}
-              </Tr>
+                <Tbody>
+                  {data.map(user => (
+                    <Tr key={user.id}>
+                      <Td px={['4', '4', '6']}><Checkbox colorScheme="pink" /></Td>
+                      <Td>
+                        <Box>
+                          <Text fontWeight="bold">{user.name}</Text>
+                          <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.300')}>{user.email}</Text>
+                        </Box>
+                      </Td>
+                      {isWideVersion && <Td>{user.createdAt}</Td>}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
 
-              <Tr>
-                <Td px={['4', '4', '6']}><Checkbox colorScheme="pink" /></Td>
-                <Td>
-                  <Box>
-                    <Text fontWeight="bold">Diego Fernanders</Text>
-                    <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.300')}>diegola@rocketseat.com</Text>
-                  </Box>
-                </Td>
-                {isWideVersion && <Td>04 de Abril, 2021</Td>}
-              </Tr>
-
-              <Tr>
-                <Td px={['4', '4', '6']}><Checkbox colorScheme="pink" /></Td>
-                <Td>
-                  <Box>
-                    <Text fontWeight="bold">Casimiro</Text>
-                    <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.300')}>ihala@meteuessa.twitch</Text>
-                  </Box>
-                </Td>
-                {isWideVersion && <Td>02 de Março, 2021</Td>}
-              </Tr>
-            </Tbody>
-          </Table>
-
-          <Pagination />
+              <Pagination />
+            </>
+          )}
         </Box>
       </Flex>
     </Box >
